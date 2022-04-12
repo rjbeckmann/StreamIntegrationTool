@@ -54,7 +54,7 @@ class StreamLootsMonitor:
     def execute(cls):
         data_stream = cls.initiate_connection()
         if not data_stream:
-            print ("failed to establish connection")
+            print ("Failed to establish connection to Streamloots")
             return 
 
         for line in data_stream.iter_lines():
@@ -68,7 +68,7 @@ class StreamLootsMonitor:
                         if decoded.strip() == ":":
                             # empty data that just populates every so often
                             continue
-                        print(decoded)
+
                         cls.parse_message(json.loads(decoded))
                     except Exception as err:
                         logger.error(f"Error {str(err)} parsing streamloots message: {decoded}")
