@@ -1,0 +1,8 @@
+[main]
+log_file: log_next_list.txt
+log_level: INFO
+streamloots_id: your streamloots id
+
+[nextlist]
+service_email: youruser@gmail.com
+spreadsheet_id: spreadsheet id in url
