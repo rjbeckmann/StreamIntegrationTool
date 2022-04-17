@@ -15,7 +15,7 @@ class App():
     def config():
         if App._configuration is None:
             conf = configparser.ConfigParser()
-            conf.read('config.txt')
+            conf.read('config.ini')
             App._configuration = Configy()
             for key in conf.keys():
                 print(key)

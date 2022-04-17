@@ -15,7 +15,7 @@ class StreamLootsMonitor:
         try:
             sess = requests.Session()
             streamloots_id = App.config().main.streamloots_id
-            url = f"{cls.url_base}{cls.streamloots_id}/media-stream"
+            url = f"{cls.url_base}{streamloots_id}/media-stream"
             req = requests.Request("GET", url).prepare()
             return sess.send(req, stream=True)
         except Exception as err:
@@ -54,7 +54,7 @@ class StreamLootsMonitor:
     def execute(cls):
         data_stream = cls.initiate_connection()
         if not data_stream:
-            print ("Failed to establish connection to Streamloots")
+            print ("failed to establish connection")
             return 
 
         for line in data_stream.iter_lines():
@@ -68,7 +68,7 @@ class StreamLootsMonitor:
                         if decoded.strip() == ":":
                             # empty data that just populates every so often
                             continue
-
+                        print(decoded)
                         cls.parse_message(json.loads(decoded))
                     except Exception as err:
                         logger.error(f"Error {str(err)} parsing streamloots message: {decoded}")
