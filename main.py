@@ -1,5 +1,8 @@
 import json
 import requests
+import socket
+import time
+
 from app import App, Logger
 from next_list import NextList, NextListException
 
@@ -55,9 +58,10 @@ class StreamLootsMonitor:
 
     @classmethod
     def execute(cls):
+        print("Initializing connection to Streamloots...")
         data_stream = cls.initiate_connection()
         if not data_stream:
-            print ("Failed to establish connection")
+            print("Failed to establish connection")
             return 
 
         print("Connection to Streamloots data stream successful.")
@@ -77,4 +81,19 @@ class StreamLootsMonitor:
                     except Exception as err:
                         logger.error(f"Error {str(err)} parsing streamloots message: {decoded}")
 
-StreamLootsMonitor.execute()
+    @classmethod
+    def execute_with_retry(cls):
+        retries = App.config().main.get('max_retries') or 3
+        for i in range(retries):
+            try:
+                cls.execute()
+            except requests.exceptions.ConnectionError as err:
+                logger.error(f"Error with Streamloots Connection: {err}")
+            except socket.timeout:
+                logger.error(f"Socket timeout to Streamloots")
+            time.sleep(App.config().main.get('connection_retry_wait_seconds') or 10)
+        else:
+            print("Unable to connect to Streamloots after {retries} attempts.")
+
+
+StreamLootsMonitor.execute_with_retry()

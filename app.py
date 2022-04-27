@@ -5,7 +5,8 @@ from datetime import datetime
 
 
 class Configy:
-    pass
+    def get(self, key):
+        return getattr(self, key, None)
 
 
 class App():
