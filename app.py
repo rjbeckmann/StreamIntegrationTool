@@ -18,7 +18,6 @@ class App():
             conf.read('config.ini')
             App._configuration = Configy()
             for key in conf.keys():
-                print(key)
                 setattr(App._configuration, key, Configy())
                 for k,v in conf[key].items():
                     current = getattr(App._configuration, key)
@@ -45,3 +44,6 @@ class Logger:
 
     def info(self, message):
         self.logger.info(message)
+
+    def debug(self, message):
+        self.logger.debug(message)
