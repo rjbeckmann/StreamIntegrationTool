@@ -1,7 +1,6 @@
 import configparser
 import logging
 import traceback
-from datetime import datetime
 
 
 class Configy:

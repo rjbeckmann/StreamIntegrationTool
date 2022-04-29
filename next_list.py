@@ -41,27 +41,31 @@ class NextList:
     def _get_prior_votes(self, cell):
         try:
             return self.ws.cell(cell.row, self.vote_column).value
-        except Exception as err:
+        except Exception:
             raise NextListException(
                "Failed to pull prior votes for row {cell.row}, column {self.VOTE_COLUMN}."
             )
 
     def _get_game_cell(self, game_id):
         if game_cell := self.ws.find(game_id):
-           return game_cell
+            return game_cell
         raise NextListException(f"Unable to locate row for game {game_id}.")
 
-    def _update(self, game_id, cell, prior_votes, votes):
+    def _update(self, game_id, cell, prior_votes, votes, username):
        try:
-            self.ws.update_cell(cell.row, self.vote_column, int(prior_votes) + votes)
-            self.logger.info(
-                f"Updated game {game_id} from {prior_votes} by {votes}." 
+            self.ws.update_cell(cell.row, self.vote_column, prior_votes + votes)
+            msg = (
+               f"Updated game {game_id} for {username} from "
+               f"{prior_votes} by {votes} to {prior_votes + votes}."
             )
+            print(msg + "\n")
+            self.logger.info(msg)
        except Exception as err:
             msg = (
                f"Unable to update NextList for game {game_id} on row "
                f"{cell.row}. Error: {str(err)}"
             )
+            print(msg + "\n")
             self.logger.error(msg)
             raise NextListException(msg)
 
@@ -75,11 +79,16 @@ class NextList:
         sort_range = f'A2:{end}'
         self.ws.sort(vote_asc, name_desc, range=sort_range)
 
-    def update(self, game_id, votes):
+    def update(self, game_id, votes, username):
         # Auto left pad the number with 0s if the user omitted them.
         no_num = game_id[1:].zfill(3)
         game_id = f'#{no_num}'
-        game_cell = self._get_game_cell(game_id) 
-        prior_votes = self._get_prior_votes(game_cell) or 0
-        self._update(game_id, game_cell, prior_votes, votes)
+        game_cell = self._get_game_cell(game_id)
+
+        if prior_votes := self._get_prior_votes(game_cell):
+            prior_votes = int(prior_votes)
+        else:
+            prior_votes = 0
+
+        self._update(game_id, game_cell, prior_votes, votes, username)
         self._sort()

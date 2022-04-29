@@ -25,22 +25,41 @@ class StreamLootsMonitor:
             sess.close()
             logger.error(err)
 
+    @staticmethod
+    def get_username(data):
+        for entry in data.get("fields", []):
+            if isinstance(entry, dict):
+                if entry.get('name') == 'username':
+                    return entry.get('value', '')
+        return ''
+    
+    @staticmethod
+    def _get_game_id(redeem_fields):
+        redeem = next(item for item in redeem_fields if item['label'] == 'Message')
+        val = redeem.get('value', '')
+        return next((item for item in val.split(' ') if item.startswith('#')), '')
+
+    @staticmethod
+    def _get_votes(desc):
+        vote_string = ''.join(char for char in desc.split(' ')[0] if char.isdigit())
+        return int(vote_string) if vote_string else 0
+
     @classmethod
     def _handle_next_list(cls, desc, data):
-        if redeems := data.get('redeemFields'):
-            redeem = next(item for item in redeems if item['label'] == 'Message')
-            val = redeem.get('value', '')
-            segment = next(item for item in val.split(' ') if item.startswith('#'))
-            votes = int(desc.split(' ')[0])
+        username = cls.get_username(data)
+        if redeem_fields := data.get('redeemFields'):
+
+            game_id_segment = cls._get_game_id(redeem_fields)
+            votes = cls._get_votes(desc)
+
             try:
-                NextList().update(game_id=segment, votes=votes)
-                print("Next List updated")
+                NextList().update(game_id=game_id_segment, votes=votes, username=username)
             except NextListException:
                 # Don't bother with error itself, failure already recorded.
                 print(cls.NEXT_LIST_ERR_SMALL)
                 logger.error(
                     f"Failed to update NextList - raw game id: {segment}, "
-                    f"votes: {votes}, full message: {data}"
+                    f"votes: {vote_string}, full message: {data}"
                 )
             except Exception as err:
                 print(cls.NEXT_LIST_ERR_SMALL)
@@ -48,12 +67,20 @@ class StreamLootsMonitor:
                     f"Unexpected error while updating NextList: {str(err)}"
                     f"Original message: {data}"
                 )
+        else:
+            uhoh = "STREAMLOOTS HAS CHANGED SCHEMA. MANUAL RECORDING NEEDED."
+            print(uhoh)
+            logger.error(uhoh)
 
     @classmethod
     def parse_message(cls, info):
         if data := info.get('data'):
             desc = data.get('description')
-            if 'next list' in desc.lower():
+            if desc is None:
+                # description not included for messages about users buying cards
+                # or updating subcriptions.
+                return
+            if 'nextlist' in desc.replace(" ","").lower():
                 cls._handle_next_list(desc, data)
 
     @classmethod
